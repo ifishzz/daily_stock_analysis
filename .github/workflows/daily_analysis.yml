@@ -40,6 +40,28 @@ jobs:
       - name: 创建必要目录
         run: |
           mkdir -p data logs reports
+      - name: 打印 OpenAI 配置（不泄露密钥）
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: |
+          echo "OPENAI_BASE_URL=$OPENAI_BASE_URL"
+          echo "OPENAI_MODEL=$OPENAI_MODEL"
+          echo "OPENAI_API_KEY length=${#OPENAI_API_KEY}"
+
+      - name: 探活 chat/completions（不泄露密钥）
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            "$OPENAI_BASE_URL/chat/completions" \
+            -d "{\"model\":\"$OPENAI_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}")
+          echo "http_code=$code"
       
       - name: 执行股票分析
         env:
